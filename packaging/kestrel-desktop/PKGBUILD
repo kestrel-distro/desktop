@@ -1,0 +1,70 @@
+# Maintainer: Kestrel <https://github.com/kestrel-distro>
+#
+# Kestrel desktop metapackage: the embedded desktop set.
+#
+# Kestrel is Hyprland + Quickshell. This metapackage is the unit that installs
+# and updates that set, and the policy that keeps it from being swapped out for
+# an unsupported stack. Enforcement is packaging-level only: a determined user
+# can still override it.
+#
+# It carries no files; it exists to pin the set together and to conflict with the
+# alternatives.
+
+pkgname=kestrel-desktop
+pkgver=1
+pkgrel=1
+pkgdesc='Kestrel desktop set: embedded Hyprland + Quickshell and matched libraries'
+arch=(x86_64)
+url="https://github.com/kestrel-distro/desktop"
+license=(GPL-2.0-only)
+depends=(
+  # The compositor and shell.
+  hyprland-kestrel
+  quickshell-kestrel
+  # The matched desktop library closure.
+  hyprutils-kestrel
+  hyprlang-kestrel
+  hyprgraphics-kestrel
+  hyprcursor-kestrel
+  hyprwire-kestrel
+  aquamarine-kestrel
+  # Runtime pieces the desktop needs.
+  hyprland-guiutils
+  xorg-xwayland
+  xdg-desktop-portal-hyprland
+  xdg-desktop-portal-gtk
+  scx-scheds
+)
+# Refuse other compositors and shells. Installing one while this is present is
+# not a supported configuration.
+conflicts=(
+  hyprland
+  quickshell
+  sway
+  river
+  niri
+  waybar
+  hyprpanel
+  noctalia
+)
+replaces=(
+  hyprland
+  quickshell
+)
+options=('!strip' '!debug')
+
+source=()
+sha256sums=()
+
+package() {
+	install -Dm644 /dev/stdin "$pkgdir/usr/share/kestrel-desktop/README" <<'EOF'
+Kestrel desktop metapackage.
+
+Kestrel ships one desktop: Hyprland (compositor) and Quickshell (shell), with a
+matched build of their shared libraries. This metapackage installs that set and
+keeps an alternative compositor or shell from replacing it.
+
+Installing a different compositor or shell by force is possible but unsupported.
+Customize the shell through its own configuration, not by swapping it.
+EOF
+}

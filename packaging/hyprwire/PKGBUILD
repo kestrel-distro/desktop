@@ -1,0 +1,54 @@
+# Maintainer: Kestrel <https://github.com/kestrel-distro>
+#
+# Kestrel rebuild of `hyprwire` at Arch's version, compiled with clang
+# -march=x86-64-v3 + ThinLTO so the whole desktop stack shares one codegen.
+# Distinct package name that provides/replaces the Arch package and its soname.
+#
+# Build options:
+#   _kestrel_march   x86-64-v3 (default)
+#   _kestrel_lto     thin (default) | none
+
+pkgname=hyprwire-kestrel
+pkgver=0.3.1
+pkgrel=1
+pkgdesc='Hyprland wire protocol library'
+arch=(x86_64)
+url="https://github.com/hyprwm/hyprwire"
+license=(BSD-3-Clause)
+depends=(libgcc libstdc++ glibc hyprutils libhyprutils.so=13-64 libffi pugixml)
+makedepends=(cmake ninja clang llvm lld pkgconf)
+provides=(hyprwire libhyprwire.so=3-64)
+conflicts=(hyprwire)
+replaces=(hyprwire)
+options=(!debug)
+
+: "${_kestrel_march:=x86-64-v3}"
+: "${_kestrel_lto:=thin}"
+
+_lib=hyprwire
+source=("$pkgname-$pkgver.tar.gz::https://github.com/hyprwm/$_lib/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('92a673d40ae6a7d66fbcd0a34ec071e026e17eaeeb0040c3375e4b2a80dba737')
+
+build() {
+	cd "$_lib-$pkgver"
+	local _cflags="-march=${_kestrel_march}"
+	local _ldflags=""
+	if [[ "$_kestrel_lto" == "thin" ]]; then
+		_cflags+=" -flto=thin"
+		_ldflags+=" -flto=thin -fuse-ld=lld"
+	fi
+	cmake -B build -S . -G Ninja -W no-dev \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+		-DCMAKE_C_FLAGS="$_cflags" -DCMAKE_CXX_FLAGS="$_cflags" \
+		-DCMAKE_EXE_LINKER_FLAGS="$_ldflags" -DCMAKE_SHARED_LINKER_FLAGS="$_ldflags" \
+		-DCMAKE_AR="$(command -v llvm-ar)" -DCMAKE_RANLIB="$(command -v llvm-ranlib)" -DCMAKE_NM="$(command -v llvm-nm)"
+	cmake --build build
+}
+
+package() {
+	cd "$_lib-$pkgver"
+	DESTDIR="$pkgdir" cmake --install build
+	[[ -f LICENSE ]] && install -Dm644 LICENSE -t "$pkgdir/usr/share/licenses/$pkgname/"
+}
