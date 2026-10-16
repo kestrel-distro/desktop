@@ -60,6 +60,19 @@ jobs:
             git add packaging
             git commit -m "Sync closure versions with Arch: ${changed[*]}"
             git push
+            # publish-trigger only fires on pushes with KESTREL_TRIGGER_TOKEN
+            # configured; dispatch directly as a fallback so version bumps
+            # self-publish either way.
+            if [[ -n "${{ secrets.KESTREL_TRIGGER_TOKEN }}" ]]; then
+              curl -fsSL -X POST \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer ${{ secrets.KESTREL_TRIGGER_TOKEN }}" \
+                https://api.github.com/repos/kestrel-distro/packages/dispatches \
+                -d '{"event_type":"desktop-release","client_payload":{"source":"version-check"}}'
+              echo "desktop-release dispatch sent"
+            else
+              echo "KESTREL_TRIGGER_TOKEN not set; version bump published but no dispatch sent"
+            fi
           else
             echo "no drift; nothing to do"
           fi
