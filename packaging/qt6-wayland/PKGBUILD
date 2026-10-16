@@ -18,7 +18,7 @@ arch=(x86_64)
 url="https://github.com/kestrel-distro/qtwayland"
 license=(GPL-3.0-only LGPL-3.0-only LicenseRef-Qt-Commercial Qt-GPL-exception-1.0)
 depends=(glibc libglvnd libstdc++ libxkbcommon qt6-base qt6-declarative qt6-svg wayland)
-makedepends=(cmake git ninja vulkan-headers)
+makedepends=(cmake git ninja vulkan-headers clang llvm lld)
 provides=(qt6-wayland)
 conflicts=(qt6-wayland)
 replaces=(qt6-wayland)
@@ -32,9 +32,9 @@ sha256sums=('SKIP')
 
 prepare() {
   cd qtwayland
-  # Fail loudly if the syncobj work is missing from the branch.
-  grep -q "drm_syncobj" src/client/CMakeLists.txt || \
-    grep -rq "drm_syncobj\|syncobj" src/client/ || \
+  # Fail loudly if the syncobj work is missing from the branch. Search the
+  # whole tree (the EGL integration lives outside src/client).
+  grep -rq "drm_syncobj\|syncobj" --exclude-dir=.git . || \
     { echo "syncobj support missing from branch" >&2; exit 1; }
 }
 
