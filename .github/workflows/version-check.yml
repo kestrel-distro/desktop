@@ -1,0 +1,54 @@
+name: version-check
+
+# The closure is pinned to Arch's exact versions (plan Part E2). This catches
+# the drift the pins invite: when Arch bumps one of the libraries, bump our
+# PKGBUILD to match, reset pkgrel, refresh checksums, and push. The push to
+# packaging/** fires publish-trigger, so the rebuilt package self-publishes.
+
+on:
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install tools
+        run: pacman -Sy --noconfirm --needed curl jq pacman-contrib git
+
+      - uses: actions/checkout@v4
+
+      - name: Sync pkgver with Arch
+        run: |
+          set -euo pipefail
+          changed=()
+          for lib in hyprutils hyprlang hyprgraphics hyprcursor hyprwire aquamarine; do
+            pkgsrc="packaging/$lib/PKGBUILD"
+            arch_ver="$(curl -fsSL "https://archlinux.org/packages/extra/x86_64/$lib/json/" \
+              | jq -r .pkgver)"
+            our_ver="$(grep -m1 '^pkgver=' "$pkgsrc" | cut -d= -f2)"
+            if [[ "$arch_ver" != "$our_ver" ]]; then
+              echo "$lib: $our_ver -> $arch_ver"
+              sed -i "s/^pkgver=.*/pkgver=$arch_ver/" "$pkgsrc"
+              sed -i "s/^pkgrel=.*/pkgrel=1/" "$pkgsrc"
+              ( cd "packaging/$lib" && updpkgsums )
+              changed+=("$lib")
+            else
+              echo "$lib: in sync at $our_ver"
+            fi
+          done
+          if ((${#changed[@]})); then
+            git config user.name "kestrel-bot"
+            git config user.email "kestrel-bot@users.noreply.github.com"
+            git add packaging
+            git commit -m "Sync closure versions with Arch: ${changed[*]}"
+            git push
+          else
+            echo "no drift; nothing to do"
+          fi
