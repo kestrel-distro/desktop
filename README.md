@@ -11,13 +11,15 @@ enforcement is packaging-level only (see the master plan, Part D).
 
 | Package | Provides | Notes |
 |---|---|---|
-| `kestrel-desktop` | (metapackage) | depends on the set; conflicts with alternative compositors/shells |
+| `aquamarine-kestrel` | `aquamarine`, `libaquamarine.so=14-64` | DRM backend library |
+| `qt6-wayland-kestrel` | `qt6-wayland` | Qt wayland plugin, client-side `linux-drm-syncobj-v1` (explicit sync) on the `kestrel-distro/qtwayland` fork |
 | `hyprutils-kestrel` | `hyprutils`, `libhyprutils.so=13-64` | |
 | `hyprlang-kestrel` | `hyprlang`, `libhyprlang.so=2-64` | |
 | `hyprgraphics-kestrel` | `hyprgraphics`, `libhyprgraphics.so=4-64` | |
 | `hyprcursor-kestrel` | `hyprcursor`, `libhyprcursor.so=0-64` | |
 | `hyprwire-kestrel` | `hyprwire`, `libhyprwire.so=3-64` | |
 | `aquamarine-kestrel` | `aquamarine`, `libaquamarine.so=14-64` | DRM backend library |
+| `qt6-wayland-kestrel` | `qt6-wayland` | Qt wayland plugin, client-side `linux-drm-syncobj-v1` (explicit sync) on the `kestrel-distro/qtwayland` fork |
 
 Each library package `conflicts`/`replaces` the Arch package and `provides` its
 soname, so Arch cannot overwrite it and consumers (for example `hyprlock`) stay

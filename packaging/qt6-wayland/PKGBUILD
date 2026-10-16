@@ -1,0 +1,65 @@
+# Maintainer: Kestrel <https://github.com/kestrel-distro>
+#
+# Kestrel rebuild of `qt6-wayland` at Arch's version, with client-side
+# linux-drm-syncobj-v1 (explicit sync) support on the kestrel/6.12.0-syncobj
+# branch of kestrel-distro/qtwayland. Quickshell's windows present through
+# this plugin; fencing them removes the implicit-sync stall before submit.
+# Distinct package name that provides/replaces the Arch package.
+#
+# Build options:
+#   _kestrel_march   x86-64-v3 (default)
+#   _kestrel_lto     thin (default) | none
+
+pkgname=qt6-wayland-kestrel
+pkgver=6.12.0
+pkgrel=1
+pkgdesc='Provides APIs for Wayland (Kestrel build: client-side explicit sync)'
+arch=(x86_64)
+url="https://github.com/kestrel-distro/qtwayland"
+license=(GPL-3.0-only LGPL-3.0-only LicenseRef-Qt-Commercial Qt-GPL-exception-1.0)
+depends=(glibc libglvnd libstdc++ libxkbcommon qt6-base qt6-declarative qt6-svg wayland)
+makedepends=(cmake git ninja vulkan-headers)
+provides=(qt6-wayland)
+conflicts=(qt6-wayland)
+replaces=(qt6-wayland)
+options=(!debug)
+
+: "${_kestrel_march:=x86-64-v3}"
+: "${_kestrel_lto:=thin}"
+
+source=(git+https://github.com/kestrel-distro/qtwayland.git#branch=kestrel/6.12.0-syncobj)
+sha256sums=('SKIP')
+
+prepare() {
+  cd qtwayland
+  # Fail loudly if the syncobj work is missing from the branch.
+  grep -q "drm_syncobj" src/client/CMakeLists.txt || \
+    grep -rq "drm_syncobj\|syncobj" src/client/ || \
+    { echo "syncobj support missing from branch" >&2; exit 1; }
+}
+
+build() {
+  cd qtwayland
+  local _cflags="-march=${_kestrel_march}"
+  local _ldflags=""
+  if [[ "$_kestrel_lto" == "thin" ]]; then
+    _cflags+=" -flto=thin"
+    _ldflags+=" -flto=thin -fuse-ld=lld"
+  fi
+  cmake -B build -S . -G Ninja -W no-dev \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_MESSAGE_LOG_LEVEL=STATUS \
+    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+    -DCMAKE_C_FLAGS="$_cflags" -DCMAKE_CXX_FLAGS="$_cflags" \
+    -DCMAKE_EXE_LINKER_FLAGS="$_ldflags" -DCMAKE_SHARED_LINKER_FLAGS="$_ldflags" \
+    -DCMAKE_AR="$(command -v llvm-ar)" -DCMAKE_RANLIB="$(command -v llvm-ranlib)" -DCMAKE_NM="$(command -v llvm-nm)"
+  cmake --build build
+}
+
+package() {
+  cd qtwayland
+  DESTDIR="$pkgdir" cmake --install build
+
+  install -d "$pkgdir/usr/share/licenses/$pkgname"
+  ln -s /usr/share/licenses/qt6-base "$pkgdir/usr/share/licenses/$pkgname/qt6-base"
+}

@@ -28,11 +28,22 @@ jobs:
         run: |
           set -euo pipefail
           changed=()
-          for lib in hyprutils hyprlang hyprgraphics hyprcursor hyprwire aquamarine; do
+          for lib in hyprutils hyprlang hyprgraphics hyprcursor hyprwire aquamarine qt6-wayland; do
             pkgsrc="packaging/$lib/PKGBUILD"
             arch_ver="$(curl -fsSL "https://archlinux.org/packages/extra/x86_64/$lib/json/" \
               | jq -r .pkgver)"
             our_ver="$(grep -m1 '^pkgver=' "$pkgsrc" | cut -d= -f2)"
+            if [[ "$lib" == "qt6-wayland" ]]; then
+              # Branch-based fork: bumping pkgver without rebasing
+              # kestrel/*-syncobj onto the new upstream tag would lie about
+              # the payload. Flag drift only; rebase manually.
+              if [[ "$arch_ver" != "$our_ver" ]]; then
+                echo "::warning::$lib drift: ours $our_ver, Arch $arch_ver — rebase the fork branch"
+              else
+                echo "$lib: in sync at $our_ver"
+              fi
+              continue
+            fi
             if [[ "$arch_ver" != "$our_ver" ]]; then
               echo "$lib: $our_ver -> $arch_ver"
               sed -i "s/^pkgver=.*/pkgver=$arch_ver/" "$pkgsrc"

@@ -28,6 +28,8 @@ depends=(
   hyprcursor-kestrel
   hyprwire-kestrel
   aquamarine-kestrel
+  # The Qt wayland plugin Quickshell presents through, with explicit sync.
+  qt6-wayland-kestrel
   # Runtime pieces the desktop needs.
   hyprland-guiutils
   xorg-xwayland
