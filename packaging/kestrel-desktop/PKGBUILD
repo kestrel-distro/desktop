@@ -28,8 +28,9 @@ depends=(
   hyprcursor-kestrel
   hyprwire-kestrel
   aquamarine-kestrel
-  # The Qt wayland plugin Quickshell presents through, with explicit sync.
-  qt6-wayland-kestrel
+  # qtbase carries the Wayland client Quickshell presents through; the
+  # Kestrel build adds client-side explicit sync (linux-drm-syncobj-v1).
+  qt6-base-kestrel
   # Runtime pieces the desktop needs.
   hyprland-guiutils
   xorg-xwayland

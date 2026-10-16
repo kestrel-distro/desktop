@@ -1,0 +1,129 @@
+# Maintainer: Kestrel <https://github.com/kestrel-distro>
+#
+# Kestrel rebuild of `qt6-base` at Arch's version. In Qt 6.12 the Wayland
+# client (platform plugin + libQt6WaylandClient) lives in qtbase, and
+# Quickshell's windows present through it; the kestrel/6.12.0-syncobj branch
+# of kestrel-distro/qtbase adds client-side linux-drm-syncobj-v1 (explicit
+# sync). Distinct package name that provides/replaces the Arch package.
+#
+# Derived from Arch's qt6-base PKGBUILD: same patches and Arch cherry-picks,
+# plus the Kestrel codegen (clang -march=x86-64-v3 + ThinLTO). The xcb
+# private headers subpackage stays with Arch's qt6-xcb-private-headers;
+# our versioned provides satisfies it.
+#
+# Build options:
+#   _kestrel_march   x86-64-v3 (default)
+#   _kestrel_lto     thin (default) | none
+
+pkgname=qt6-base-kestrel
+pkgver=6.12.0
+pkgrel=1
+pkgdesc='A cross-platform application and UI framework (Kestrel build: Wayland explicit sync)'
+arch=(x86_64)
+url="https://github.com/kestrel-distro/qtbase"
+license=(GPL-3.0-only LGPL-3.0-only LicenseRef-Qt-Commercial Qt-GPL-exception-1.0)
+depends=(brotli dbus double-conversion fontconfig freetype2 glib2 glibc
+         harfbuzz icu krb5 libb2 libcups libdrm libgcc libgl libice libinput
+         libjpeg-turbo libpng libproxy libsm libstdc++ liburing libx11 libxcb
+         libxkbcommon libxkbcommon-x11 md4c mesa mtdev openssl pcre2
+         shared-mime-info sqlite systemd-libs tslib wayland xcb-util-cursor
+         xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
+         xdg-utils zlib zstd qt6-translations)
+makedepends=(alsa-lib cmake cups freetds git gst-plugins-base-libs gtk3
+             jemalloc libfbclient libpulse mariadb-libs ninja postgresql
+             renderdoc unixodbc vulkan-headers xmlstarlet clang llvm lld)
+optdepends=('freetds: MS SQL driver'
+            'gdk-pixbuf2: GTK platform plugin'
+            'gtk3: GTK platform plugin'
+            'libfbclient: Firebird/iBase driver'
+            'mariadb-libs: MariaDB driver'
+            'pango: GTK platform plugin'
+            'perl: for syncqt'
+            'postgresql-libs: PostgreSQL driver'
+            'unixodbc: ODBC driver')
+provides=("qt6-base=$pkgver")
+conflicts=(qt6-base)
+replaces=(qt6-base)
+options=(!debug)
+
+: "${_kestrel_march:=x86-64-v3}"
+: "${_kestrel_lto:=thin}"
+
+_pkgfn=qtbase
+source=(git+https://github.com/kestrel-distro/qtbase.git#branch=kestrel/6.12.0-syncobj
+        qt6-base-cflags.patch
+        qt6-base-nostrip.patch)
+sha256sums=('SKIP'
+            '5411edbe215c24b30448fac69bd0ba7c882f545e8cf05027b2b6e2227abc5e78'
+            '4b93f6a79039e676a56f9d6990a324a64a36f143916065973ded89adc621e094')
+
+prepare() {
+  cd $_pkgfn
+  # Fail loudly if the syncobj work is missing from the branch.
+  grep -rq "drm_syncobj\|syncobj" --exclude-dir=.git src/plugins/platforms/wayland || \
+    { echo "syncobj support missing from branch" >&2; exit 1; }
+
+  patch -p1 < ../qt6-base-cflags.patch # Use system CFLAGS
+  patch -p1 < ../qt6-base-nostrip.patch # Don't strip binaries with qmake
+
+  # Arch's post-6.12.0 fix queue. These commits sit on upstream's dev branch
+  # and are not reachable from the v6.12.0 tag our branch is based on, so
+  # they are not objects in this fork; fetch them (with history for the
+  # 3-way merge) from the upstream mirror and cherry-pick without committing.
+  git remote add upstream https://github.com/qt/qtbase.git
+  git fetch --quiet --depth 100 upstream \
+    e320c929207aaea0d4c8fb2cd29b16de6cbd2b2c \
+    032643f99e090e0304ef935c2ee11c109d55c8a1 \
+    6b7ee05def510c333fbb8944ae669b72a48367f3
+  git cherry-pick -n e320c929207aaea0d4c8fb2cd29b16de6cbd2b2c # Fix QtWebEngine detection in cmake
+  git cherry-pick -n 032643f99e090e0304ef935c2ee11c109d55c8a1 # Fix build with md4c 0.6
+  git cherry-pick -n 6b7ee05def510c333fbb8944ae669b72a48367f3 # Fix tab scrolling with mouse wheel
+}
+
+build() {
+  cd $_pkgfn
+  local _cflags="-march=${_kestrel_march}"
+  local _ldflags=""
+  if [[ "$_kestrel_lto" == "thin" ]]; then
+    _cflags+=" -flto=thin"
+    _ldflags+=" -flto=thin -fuse-ld=lld"
+  fi
+
+  cmake -B build -S . -G Ninja -W no-dev \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+    -DCMAKE_C_FLAGS="$_cflags" \
+    -DCMAKE_CXX_FLAGS="$_cflags" \
+    -DCMAKE_EXE_LINKER_FLAGS="$_ldflags" \
+    -DCMAKE_SHARED_LINKER_FLAGS="$_ldflags" \
+    -DCMAKE_AR="$(command -v llvm-ar)" \
+    -DCMAKE_RANLIB="$(command -v llvm-ranlib)" \
+    -DCMAKE_NM="$(command -v llvm-nm)" \
+    -DINSTALL_BINDIR=lib/qt6/bin \
+    -DINSTALL_PUBLICBINDIR=bin \
+    -DINSTALL_LIBEXECDIR=lib/qt6 \
+    -DINSTALL_DOCDIR=share/doc/qt6 \
+    -DINSTALL_ARCHDATADIR=lib/qt6 \
+    -DINSTALL_DATADIR=share/qt6 \
+    -DINSTALL_INCLUDEDIR=include/qt6 \
+    -DINSTALL_MKSPECSDIR=lib/qt6/mkspecs \
+    -DINSTALL_EXAMPLESDIR=share/doc/qt6/examples \
+    -DFEATURE_journald=ON \
+    -DFEATURE_libproxy=ON \
+    -DFEATURE_openssl_linked=ON \
+    -DFEATURE_system_sqlite=ON \
+    -DFEATURE_system_xcb_xinput=ON \
+    -DFEATURE_no_direct_extern_access=ON \
+    -DFEATURE_mimetype_database=OFF \
+    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+    -DCMAKE_MESSAGE_LOG_LEVEL=STATUS
+  cmake --build build
+}
+
+package() {
+  cd $_pkgfn
+  DESTDIR="$pkgdir" cmake --install build
+
+  install -Dm644 LICENSES/* -t "$pkgdir/usr/share/licenses/$pkgname/"
+}

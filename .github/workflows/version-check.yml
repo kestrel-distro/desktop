@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           changed=()
-          for lib in hyprutils hyprlang hyprgraphics hyprcursor hyprwire aquamarine qt6-wayland; do
+          for lib in hyprutils hyprlang hyprgraphics hyprcursor hyprwire aquamarine qt6-base; do
             pkgsrc="packaging/$lib/PKGBUILD"
             arch_ver="$(curl -fsSL "https://archlinux.org/packages/extra/x86_64/$lib/json/" \
               | jq -r .pkgver)"

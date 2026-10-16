@@ -12,14 +12,14 @@ enforcement is packaging-level only (see the master plan, Part D).
 | Package | Provides | Notes |
 |---|---|---|
 | `aquamarine-kestrel` | `aquamarine`, `libaquamarine.so=14-64` | DRM backend library |
-| `qt6-wayland-kestrel` | `qt6-wayland` | Qt wayland plugin, client-side `linux-drm-syncobj-v1` (explicit sync) on the `kestrel-distro/qtwayland` fork |
+| `qt6-base-kestrel` | `qt6-base` | Qt base (carries the Wayland client Quickshell presents through), client-side `linux-drm-syncobj-v1` (explicit sync) on the `kestrel-distro/qtbase` fork |
 | `hyprutils-kestrel` | `hyprutils`, `libhyprutils.so=13-64` | |
 | `hyprlang-kestrel` | `hyprlang`, `libhyprlang.so=2-64` | |
 | `hyprgraphics-kestrel` | `hyprgraphics`, `libhyprgraphics.so=4-64` | |
 | `hyprcursor-kestrel` | `hyprcursor`, `libhyprcursor.so=0-64` | |
 | `hyprwire-kestrel` | `hyprwire`, `libhyprwire.so=3-64` | |
 | `aquamarine-kestrel` | `aquamarine`, `libaquamarine.so=14-64` | DRM backend library |
-| `qt6-wayland-kestrel` | `qt6-wayland` | Qt wayland plugin, client-side `linux-drm-syncobj-v1` (explicit sync) on the `kestrel-distro/qtwayland` fork |
+| `qt6-base-kestrel` | `qt6-base` | Qt base (carries the Wayland client Quickshell presents through), client-side `linux-drm-syncobj-v1` (explicit sync) on the `kestrel-distro/qtbase` fork |
 
 Each library package `conflicts`/`replaces` the Arch package and `provides` its
 soname, so Arch cannot overwrite it and consumers (for example `hyprlock`) stay
