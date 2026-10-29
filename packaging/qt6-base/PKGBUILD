@@ -82,8 +82,8 @@ prepare() {
 
 build() {
   cd $_pkgfn
-  local _cflags="-march=${_kestrel_march}"
-  local _ldflags=""
+  local _cflags="$CFLAGS -march=${_kestrel_march}"
+  local _ldflags="$LDFLAGS"
   if [[ "$_kestrel_lto" == "thin" ]]; then
     _cflags+=" -flto=thin"
     _ldflags+=" -flto=thin -fuse-ld=lld"
@@ -91,7 +91,7 @@ build() {
 
   cmake -B build -S . -G Ninja -W no-dev \
     -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
     -DCMAKE_C_FLAGS="$_cflags" \
     -DCMAKE_CXX_FLAGS="$_cflags" \

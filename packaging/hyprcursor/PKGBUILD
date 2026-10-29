@@ -31,8 +31,8 @@ sha256sums=('82af8b2ce27242ffdd6baebaa71b3f6c8665dc25c52bfcfccc16912622896af8')
 
 build() {
 	cd "$_lib-$pkgver"
-	local _cflags="-march=${_kestrel_march}"
-	local _ldflags=""
+	local _cflags="$CFLAGS -march=${_kestrel_march}"
+	local _ldflags="$LDFLAGS"
 	if [[ "$_kestrel_lto" == "thin" ]]; then
 		_cflags+=" -flto=thin"
 		_ldflags+=" -flto=thin -fuse-ld=lld"
