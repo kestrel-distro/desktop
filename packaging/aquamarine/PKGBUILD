@@ -9,7 +9,7 @@
 #   _kestrel_lto     thin (default) | none
 
 pkgname=aquamarine-kestrel
-pkgver=0.15.1
+pkgver=0.16.0
 pkgrel=1
 pkgdesc='Aquamarine DRM backend library for Hyprland'
 arch=(x86_64)
@@ -17,7 +17,7 @@ url="https://github.com/hyprwm/aquamarine"
 license=(BSD-3-Clause)
 depends=(libgcc libstdc++ glibc hyprutils libhyprutils.so=13-64 libdisplay-info libdrm libglvnd libinput mesa opengl-driver pixman seatd systemd-libs wayland wayland-protocols)
 makedepends=(cmake ninja clang llvm lld pkgconf)
-provides=(aquamarine libaquamarine.so=14-64)
+provides=(aquamarine libaquamarine.so=15-64)
 conflicts=(aquamarine)
 replaces=(aquamarine)
 options=(!debug)
@@ -27,7 +27,7 @@ options=(!debug)
 
 _lib=aquamarine
 source=("$pkgname-$pkgver.tar.gz::https://github.com/hyprwm/$_lib/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('2f9de98c0bd1b7b1b09c576e390a2fef436449762fb334163c414f0c300296f2')
+sha256sums=('42339c3096c9de6582c0d71bc86b7e63334a3faf6a2b917d385ad093caf66c3c')
 
 build() {
 	cd "$_lib-$pkgver"
