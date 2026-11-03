@@ -16,7 +16,7 @@ arch=(x86_64)
 url="https://github.com/hyprwm/aquamarine"
 license=(BSD-3-Clause)
 depends=(libgcc libstdc++ glibc hyprutils libhyprutils.so=13-64 libdisplay-info libdrm libglvnd libinput mesa opengl-driver pixman seatd systemd-libs wayland wayland-protocols)
-makedepends=(cmake ninja clang llvm lld pkgconf)
+makedepends=(cmake ninja clang llvm lld pkgconf hyprwayland-scanner)
 provides=(aquamarine libaquamarine.so=15-64)
 conflicts=(aquamarine)
 replaces=(aquamarine)
